@@ -26,7 +26,7 @@ func main() {
     return
   }
   // Recieve any future messages
-  watcher.SubscribeFromNow("Application")
+  watcher.SubscribeFromNow("Application", "*")
   for {
     select {
     case evt := <- watcher.Event():

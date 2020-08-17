@@ -6,6 +6,9 @@
 // where they are called twice - once to determine the necessary buffer size,
 // and once to copy values into the supplied buffer.
 
+#ifdef _WIN32_WINNT
+#undef _WIN32_WINNT
+#endif
 #define _WIN32_WINNT 0x0602
 
 #include "event.h"
