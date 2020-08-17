@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"time"
 	"unsafe"
+
+	"github.com/mattn/go-pointer"
 )
 
 type EVT_SUBSCRIBE_FLAGS int
@@ -109,7 +111,7 @@ func GetSystemRenderContext() (SysRenderContext, error) {
 func CreateListener(channel, query string, startpos EVT_SUBSCRIBE_FLAGS, watcher *LogEventCallbackWrapper) (ListenerHandle, error) {
 	cChan := C.CString(channel)
 	cQuery := C.CString(query)
-	listenerHandle := C.CreateListener(cChan, cQuery, C.int(startpos), C.PVOID(watcher))
+	listenerHandle := C.CreateListener(cChan, cQuery, C.int(startpos), C.PVOID(pointer.Save(watcher)))
 	C.free(unsafe.Pointer(cChan))
 	C.free(unsafe.Pointer(cQuery))
 	if listenerHandle == 0 {
@@ -125,7 +127,7 @@ func CreateListener(channel, query string, startpos EVT_SUBSCRIBE_FLAGS, watcher
 func CreateListenerFromBookmark(channel, query string, watcher *LogEventCallbackWrapper, bookmarkHandle BookmarkHandle) (ListenerHandle, error) {
 	cChan := C.CString(channel)
 	cQuery := C.CString(query)
-	listenerHandle := C.CreateListenerFromBookmark(cChan, cQuery, C.PVOID(watcher), C.ULONGLONG(bookmarkHandle))
+	listenerHandle := C.CreateListenerFromBookmark(cChan, cQuery, C.PVOID(pointer.Save(watcher)), C.ULONGLONG(bookmarkHandle))
 	C.free(unsafe.Pointer(cChan))
 	C.free(unsafe.Pointer(cQuery))
 	if listenerHandle == 0 {
@@ -289,7 +291,8 @@ func getTestEventHandle() (EventHandle, error) {
 
 //export eventCallbackError
 func eventCallbackError(errCode C.ULONGLONG, logWatcher unsafe.Pointer) {
-	watcher := (*LogEventCallbackWrapper)(logWatcher).callback
+	lw := pointer.Restore(logWatcher).(*LogEventCallbackWrapper)
+	watcher := lw.callback
 	// The provided errCode can be looked up in the Microsoft System Error Code table:
 	// https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382(v=vs.85).aspx
 	watcher.PublishError(fmt.Errorf("Event log callback got error code: %v", errCode))
@@ -297,7 +300,7 @@ func eventCallbackError(errCode C.ULONGLONG, logWatcher unsafe.Pointer) {
 
 //export eventCallback
 func eventCallback(handle C.ULONGLONG, logWatcher unsafe.Pointer) {
-	wrapper := (*LogEventCallbackWrapper)(logWatcher)
-	watcher := wrapper.callback
-	watcher.PublishEvent(EventHandle(handle), wrapper.subscribedChannel)
+	lw := pointer.Restore(logWatcher).(*LogEventCallbackWrapper)
+	watcher := lw.callback
+	watcher.PublishEvent(EventHandle(handle), lw.subscribedChannel)
 }

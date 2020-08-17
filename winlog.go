@@ -247,7 +247,7 @@ func (self *WinLogWatcher) convertEvent(handle EventHandle, subscribedChannel st
 
 	// Return an error if we couldn't render anything useful
 	if xmlErr != nil && renderedFieldsErr != nil {
-		return nil, fmt.Errorf("Failed to render event values and XML: %v", []error{renderedFieldsErr, xmlErr})
+		return nil, fmt.Errorf("failed to render event values and XML: %v", []error{renderedFieldsErr, xmlErr})
 	}
 
 	event := WinLogEvent{
@@ -318,5 +318,4 @@ func (self *WinLogWatcher) PublishEvent(handle EventHandle, subscribedChannel st
 	case <-self.shutdown:
 		return
 	}
-
 }
